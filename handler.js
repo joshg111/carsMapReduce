@@ -1,6 +1,7 @@
 'use strict';
 var rp = require('request-promise');
 const pConfig = require("./src/configuration/publicConfig");
+const privateConfig = require("./src/configuration/privateConfig");
 
 const OPTIONS = pConfig.rp.OPTIONS;
 const RETRYCOUNT = 2;
@@ -54,22 +55,33 @@ async function getCarHrefsWithSearch(params) {
 }
 
 async function callGetCars(carHrefs) {
-  console.log(carHrefs);
-  return [1,2,3];
+  var body = await rp({method: 'POST',
+                      timeout: 20000,
+                      uri: privateConfig.getCarsFromHrefsUrl,
+                      headers: {
+                          "Content-Type": "application/json; charset=utf-8"
+                      },
+                      body: JSON.stringify({
+                        urls: carHrefs
+                      })});
+  return JSON.parse(body);
 }
 
 async function shardCars(carHrefs) {
-  var acc = [];
+  var promises = [];
   var shardCount = 10;
-  for(var start = 0; start < 50; start+=shardCount) {
-      acc.push(callGetCars(carHrefs.slice(start, start+shardCount)));
+  var expected = 0;
+  for(var start = 0; start < 30 && start < carHrefs.length; start+=shardCount) {
+    var hrefs = carHrefs.slice(start, start+shardCount);
+    expected += hrefs.length;
+    promises.push(callGetCars(hrefs));
   }
   
-  var cars = await Promise.all(acc);
+  var cars = await Promise.all(promises);
   cars = cars.reduce((acc, curr) => {
-    return acc.concat(curr);
+    return acc.concat(curr.cars);
   }, []);
-  return cars;
+  return {cars, expected};
 }
 
 
@@ -91,21 +103,20 @@ module.exports.carLinks = async (event, context) => {
           return seen.hasOwnProperty(item) ? false : (seen[item] = true);
       });
 
-      var cars = await shardCars(carHrefs);
-      console.log(cars);
+      var {cars, expected} = await shardCars(carHrefs);
 
       cars = cars.filter((element, index) => {
           return element !== null;
       });
 
       // Sort
-      carsResolved.sort((a, b) => {
+      cars.sort((a, b) => {
           return (a.percentAboveKbb - b.percentAboveKbb);
       })
 
-      console.log("carsResolved = ", carsResolved);
-      console.log("result length = ", carsResolved.length);
-      console.log("expected length = ", cars.length);
+      console.log("carsResolved = ", cars);
+      console.log("result length = ", cars.length);
+      console.log("expected length = ", expected);
 
       var endTime = new Date();
       var timeDiff = endTime - startTime; //in ms
@@ -128,6 +139,6 @@ module.exports.carLinks = async (event, context) => {
   return rr;
 };
 
-var input = {query: "mercedes-benz", city: "sandiego"};
-// var input = {query: "honda accord", city: "sandiego"};
+// var input = {query: "mercedes-benz", city: "sandiego"};
+var input = {query: "honda accord", city: "sandiego"};
 module.exports.carLinks({body: JSON.stringify(input)}, {callbackWaitsForEmptyEventLoop: false});
