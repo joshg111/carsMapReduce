@@ -56,7 +56,7 @@ async function getCarHrefsWithSearch(params) {
 
 async function callGetCars(carHrefs) {
   var body = await rp({method: 'POST',
-                      timeout: 20000,
+                      timeout: 30000,
                       uri: privateConfig.getCarsFromHrefsUrl,
                       headers: {
                           "Content-Type": "application/json; charset=utf-8"
@@ -127,7 +127,7 @@ module.exports.carLinks = async (event, context) => {
       var rr = {
           statusCode: 200,
           body: JSON.stringify({
-              cars: carsResolved
+              cars: cars
           }),
       };
   }
