@@ -69,7 +69,7 @@ async function callGetCars(carHrefs) {
 
 async function shardCars(carHrefs) {
   var promises = [];
-  var shardCount = 10;
+  var shardCount = 5;
   var expected = 0;
   for(var start = 0; start < 30 && start < carHrefs.length; start+=shardCount) {
     var hrefs = carHrefs.slice(start, start+shardCount);
