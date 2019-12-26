@@ -69,7 +69,7 @@ async function callGetCars(carHrefs) {
 
 async function shardCars(carHrefs) {
   var promises = [];
-  var shardCount = 5;
+  var shardCount = 2;
   var expected = 0;
   for(var start = 0; start < 30 && start < carHrefs.length; start+=shardCount) {
     var hrefs = carHrefs.slice(start, start+shardCount);
@@ -140,5 +140,6 @@ module.exports.carLinks = async (event, context) => {
 };
 
 // var input = {query: "mercedes-benz", city: "sandiego"};
-var input = {query: "honda accord", city: "sandiego"};
-module.exports.carLinks({body: JSON.stringify(input)}, {callbackWaitsForEmptyEventLoop: false});
+// var input = {query: "honda accord", city: "sandiego"};
+// var input = {query: "bmw", city: "sandiego"};
+// module.exports.carLinks({body: JSON.stringify(input)}, {callbackWaitsForEmptyEventLoop: false});
